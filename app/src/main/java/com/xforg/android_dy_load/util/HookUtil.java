@@ -6,7 +6,8 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-
+import android.view.View;
+import android.widget.Toast;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -149,11 +150,53 @@ public class HookUtil {
             //获取原始的mCallBack字段
             Field mCallBack = Handler.class.getDeclaredField("mCallback");
             mCallBack.setAccessible(true);
-            //这里设置了我们自己实现了接口的CallBack对象
+            //这里设置了我们自己实现了接口的 CallBack 对象
             mCallBack.set(handler, new ActivityThreadHandlerCallback(handler)) ;
 
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+
+    public static void hookOnclickListener(View view){
+        try {
+            Method getListenerInfo = View.class.getDeclaredMethod("getListenerInfo");
+            getListenerInfo.setAccessible(true);
+            // 通过反射调用 view 的 getListenerInfo 方法
+            Object listenerInfo = getListenerInfo.invoke(view);
+
+            // 通过反射，重新构建一个 ListenerInfo 的Class对象
+            Class<?> listenenerInfoClazz = Class.forName("android.view.View$ListenerInfo");
+            // 获取 ListenerInfo Class对象中的 mOnClickListener
+            Field mOnClickListener = listenenerInfoClazz.getDeclaredField("mOnClickListener");
+            mOnClickListener.setAccessible(true);
+            // 返回 listenerInfo 的 mOClickListener 属性的值
+            View.OnClickListener  originOnClickListener = (View.OnClickListener) mOnClickListener.get(listenerInfo);
+
+            // 用自定义的 OnClickListener 替换原始的 OnClickListener
+            View.OnClickListener hookedOnCLickListener = new HookedOnClickListener(originOnClickListener);
+            mOnClickListener.set(listenerInfo,hookedOnCLickListener);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    static class HookedOnClickListener implements View.OnClickListener{
+
+        private View.OnClickListener origin;
+
+        public HookedOnClickListener(View.OnClickListener origin){
+            this.origin = origin;
+        }
+
+        @Override
+        public void onClick(View v) {
+            Log.d(TAG, "onClick: Before click, do what you want to to.");
+            if (origin != null) {
+                origin.onClick(v);
+            }
+            Log.d(TAG, "onClick: After click, do what you want to to.");
         }
     }
 }

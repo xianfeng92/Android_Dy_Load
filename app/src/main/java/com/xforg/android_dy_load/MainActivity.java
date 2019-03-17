@@ -18,6 +18,8 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.Toast;
 import com.tbruyelle.rxpermissions.RxPermissions;
+import com.xforg.android_dy_load.util.HookUtil;
+
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -58,9 +60,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
-
     @Override
     public void onClick(View v) {
+        HookUtil.hookOnclickListener(v);
         switch (v.getId()){
             case R.id.button:
                 Intent intent = new Intent(MainActivity.this,SecActivity.class);
